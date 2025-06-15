@@ -201,6 +201,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Your Name - chaitnaya and harsh kumar - email-mulechaitu3@gmail.com and sharmaharsh9708@gmail.com.
+Your Name - Chaitnaya and Harsh Kumar - email-mulechaitu3@gmail.com and sharmaharsh9708@gmail.com.
 
 Project Link: https://github.com/Chaitureddy1606/spot-the-scam
