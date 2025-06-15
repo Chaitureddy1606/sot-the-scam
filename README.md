@@ -1,6 +1,8 @@
 # 🕵️ Spot The Scam - Job Fraud Detector
 
 A machine learning-powered tool to detect fraudulent job postings using advanced NLP techniques and model explainability.
+google drive link of ppt presentation and video discussion link👇👇👇👇👇
+https://drive.google.com/drive/folders/1cDdrq97c_L0FUr4ncmnUn9W3jgGEDw94
 
 ## 📋 Overview
 
