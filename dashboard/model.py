@@ -1,180 +1,135 @@
-import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-import joblib
 import re
-import os
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import spacy
 
 class JobScamDetector:
+    """Simple job scam detector using rule-based and NLP approaches."""
+    
     def __init__(self):
-        self.vectorizer = None
-        self.model = None
-        self.load_model()
-
-    def load_model(self):
-        """Load the trained model and vectorizer."""
-        model_path = os.path.join(os.path.dirname(__file__), 'models')
+        """Initialize the detector with necessary resources."""
+        # Download required NLTK data
         try:
-            self.vectorizer = joblib.load(os.path.join(model_path, 'vectorizer.joblib'))
-            self.model = joblib.load(os.path.join(model_path, 'model.joblib'))
-        except FileNotFoundError:
-            # If model doesn't exist, create a basic one
-            self._create_basic_model()
-
-    def _create_basic_model(self):
-        """Create a basic model with common scam indicators."""
-        # Initialize vectorizer and model
-        self.vectorizer = TfidfVectorizer(
-            max_features=5000,
-            stop_words='english',
-            ngram_range=(1, 2)
-        )
-        self.model = RandomForestClassifier(
-            n_estimators=100,
-            random_state=42
-        )
-
-        # Create basic training data
-        scam_examples = [
-            "Work from home opportunity! Earn $10,000/week guaranteed!",
-            "No experience needed! Immediate start with high salary!",
-            "Send personal bank details for direct deposit setup",
-            "Investment required for training materials",
-            "Urgent position! Send SSN and ID for immediate start"
-        ]
-        legitimate_examples = [
-            "Software Engineer position at established company",
-            "Marketing Manager role with competitive salary",
-            "Administrative Assistant needed for local office",
-            "Sales Representative position with base salary plus commission",
-            "Project Manager role with 5 years experience required"
-        ]
-
-        # Combine examples and create labels
-        X = scam_examples + legitimate_examples
-        y = [1] * len(scam_examples) + [0] * len(legitimate_examples)
-
-        # Fit vectorizer and model
-        X_vectorized = self.vectorizer.fit_transform(X)
-        self.model.fit(X_vectorized, y)
-
-    def _preprocess_text(self, text):
-        """Preprocess job posting text."""
-        if not isinstance(text, str):
-            return ""
-        # Convert to lowercase
-        text = text.lower()
-        # Remove special characters and extra whitespace
-        text = re.sub(r'[^\w\s]', ' ', text)
-        text = ' '.join(text.split())
-        return text
-
-    def _extract_risk_factors(self, text, probability):
-        """Extract potential risk factors from the job posting."""
-        risk_factors = []
-        text_lower = text.lower()
-
-        # Common scam indicators
-        if probability > 0.5:
-            indicators = {
-                'urgent_hiring': (
-                    any(word in text_lower for word in ['urgent', 'immediate start', 'apply now']),
-                    "Urgent or immediate hiring mentioned"
-                ),
-                'high_salary': (
-                    any(word in text_lower for word in ['$$$', 'guaranteed salary', 'huge salary']),
-                    "Unrealistic salary promises"
-                ),
-                'no_experience': (
-                    'no experience' in text_lower or 'no skills needed' in text_lower,
-                    "No experience or skills required"
-                ),
-                'personal_info': (
-                    any(word in text_lower for word in ['ssn', 'bank details', 'bank account']),
-                    "Requests for personal/financial information"
-                ),
-                'investment': (
-                    any(word in text_lower for word in ['investment', 'payment required', 'fees']),
-                    "Requires upfront payment or investment"
-                ),
-                'poor_grammar': (
-                    len(re.findall(r'[!]{2,}', text)) > 0 or len(re.findall(r'[?]{2,}', text)) > 0,
-                    "Poor grammar or excessive punctuation"
-                ),
-                'vague_description': (
-                    len(text.split()) < 50,
-                    "Vague or very short job description"
-                )
+            nltk.data.find('tokenizers/punkt')
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            nltk.download('punkt')
+            nltk.download('stopwords')
+        
+        # Load spaCy model
+        try:
+            self.nlp = spacy.load('en_core_web_sm')
+        except OSError:
+            spacy.cli.download('en_core_web_sm')
+            self.nlp = spacy.load('en_core_web_sm')
+        
+        # Initialize risk patterns
+        self.risk_patterns = {
+            'urgency': [
+                r'urgent',
+                r'immediate',
+                r'start asap',
+                r'quick money',
+                r'fast cash'
+            ],
+            'payment': [
+                r'\$\d+[kK]?\s*(?:per|/|\-)\s*(?:hour|hr|day|week|month)',
+                r'registration fee',
+                r'training fee',
+                r'certification fee',
+                r'investment required'
+            ],
+            'contact': [
+                r'whatsapp',
+                r'telegram',
+                r'\+\d{10,}',
+                r'contact.*urgently',
+                r'dm for details'
+            ],
+            'suspicious_terms': [
+                r'work from home',
+                r'no experience',
+                r'earn \$\d+k?\+?',
+                r'weekly pay',
+                r'daily pay'
+            ]
+        }
+    
+    def analyze_posting(self, title="", description="", location="", company_profile=""):
+        """Analyze a job posting for potential scam indicators."""
+        try:
+            # Combine all text fields
+            text = f"{title} {description} {location} {company_profile}".lower()
+            
+            # Initialize result
+            result = {
+                'probability': 0.0,
+                'risk_factors': [],
+                'explanation': []
+            }
+            
+            # Check for risk patterns
+            risk_score = 0
+            total_patterns = 0
+            
+            for category, patterns in self.risk_patterns.items():
+                for pattern in patterns:
+                    total_patterns += 1
+                    if re.search(pattern, text, re.IGNORECASE):
+                        risk_score += 1
+                        result['risk_factors'].append(f"Found suspicious {category} pattern: {pattern}")
+            
+            # Add NLP-based analysis
+            doc = self.nlp(text[:1000000])  # Limit text length to avoid memory issues
+            
+            # Check for unusual email domains
+            emails = re.findall(r'[\w\.-]+@[\w\.-]+', text)
+            suspicious_domains = ['gmail', 'yahoo', 'hotmail', 'outlook']
+            for email in emails:
+                domain = email.split('@')[1].lower()
+                if any(d in domain for d in suspicious_domains):
+                    result['risk_factors'].append("Using personal email domain for business communication")
+                    risk_score += 0.5
+            
+            # Check for urgency in language
+            urgency_words = ['urgent', 'immediate', 'asap', 'quick', 'fast', 'hurry']
+            if any(word.lower_ in urgency_words for word in doc):
+                result['risk_factors'].append("Uses urgent language")
+                risk_score += 0.5
+            
+            # Check for vague job descriptions
+            tokens = [token.text for token in doc if not token.is_stop and not token.is_punct]
+            if len(tokens) < 50:
+                result['risk_factors'].append("Very short or vague job description")
+                risk_score += 0.5
+            
+            # Calculate final probability
+            result['probability'] = min(1.0, risk_score / (total_patterns + 3))
+            
+            # Add explanations
+            if result['probability'] > 0.5:
+                result['explanation'] = [
+                    "High risk indicators detected",
+                    f"Found {len(result['risk_factors'])} suspicious patterns",
+                    "Consider verifying the company and job details"
+                ]
+            else:
+                result['explanation'] = [
+                    "Low risk indicators",
+                    "Job posting appears legitimate",
+                    "Always verify company information"
+                ]
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error in analyze_posting: {str(e)}")
+            return {
+                'probability': 0.5,
+                'risk_factors': ["Error analyzing job posting"],
+                'explanation': ["Could not complete analysis", str(e)]
             }
 
-            for check, (condition, message) in indicators.items():
-                if condition:
-                    risk_factors.append(message)
-
-        return risk_factors
-
-    def _calculate_verification_score(self, text, risk_factors):
-        """Calculate a verification score based on various factors."""
-        base_score = 1.0 - (len(risk_factors) * 0.1)  # Deduct 0.1 for each risk factor
-        
-        # Check for professional elements
-        professional_indicators = [
-            'experience required',
-            'qualifications',
-            'responsibilities',
-            'benefits',
-            'company culture',
-            'job requirements'
-        ]
-        
-        for indicator in professional_indicators:
-            if indicator in text.lower():
-                base_score += 0.05  # Add 0.05 for each professional indicator
-        
-        # Normalize score between 0 and 1
-        return max(0.0, min(1.0, base_score))
-
-    def analyze_posting(self, title, description, location=None, company_profile=None):
-        """Analyze a single job posting."""
-        # Combine all text fields
-        combined_text = f"{title} {description}"
-        if location:
-            combined_text += f" {location}"
-        if company_profile:
-            combined_text += f" {company_profile}"
-
-        # Preprocess text
-        processed_text = self._preprocess_text(combined_text)
-        
-        # Vectorize
-        X = self.vectorizer.transform([processed_text])
-        
-        # Get prediction and probability
-        probability = self.model.predict_proba(X)[0][1]
-        
-        # Extract risk factors
-        risk_factors = self._extract_risk_factors(combined_text, probability)
-        
-        # Calculate verification score
-        verification_score = self._calculate_verification_score(combined_text, risk_factors)
-        
-        return {
-            'probability': probability,
-            'risk_factors': risk_factors,
-            'verification_score': verification_score
-        }
-
-    def analyze_batch(self, df):
-        """Analyze multiple job postings."""
-        results = []
-        for _, row in df.iterrows():
-            analysis = self.analyze_posting(
-                title=row['job_title'],
-                description=row['job_description'],
-                location=row.get('location'),
-                company_profile=row.get('company_profile')
-            )
-            results.append(analysis)
-        return results 
+# Initialize global model instance
+model = JobScamDetector() 

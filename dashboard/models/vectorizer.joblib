@@ -1,0 +1,24 @@
+csklearn.feature_extraction.text
+TfidfVectorizer
+q )�q}q(X
+   input_typeqX   contentqX   encodingqX   utf-8qX   decode_errorqX   strictqX   strip_accentsq	NX   preprocessorq
+NX	   tokenizerqNX   analyzerqX   wordqX	   lowercaseq�X   token_patternqX   (?u)\b\w\w+\bqX
+   stop_wordsqX   englishqX   max_dfqG?�      X   min_dfqKX   max_featuresqM�  X   ngram_rangeqKK�qX
+   vocabularyqNX   binaryq�X   dtypeqcnumpy
+float64
+qX   _tfidfqcsklearn.feature_extraction.text
+TfidfTransformer
+q)�q}q(X   normqX   l2q X   use_idfq!�X
+   smooth_idfq"�X   sublinear_tfq#�X	   _idf_diagq$cnumpy.core.multiarray
+_reconstruct
+q%cnumpy
+ndarray
+q&K �q'Cbq(�q)Rq*(KK�q+cnumpy
+dtype
+q,X   f8q-K K�q.Rq/(KX   <q0NNNJ����J����K tq1b�C      �?      �?q2tq3bubX   fixed_vocabulary_q4�X   _stop_words_idq5M�X   stop_words_q6cbuiltins
+set
+q7]q8(X   youq9X   willq:X   whenq;X   whatq<X   wereq=X   wasq>X   wantq?X   usq@X   upqAX   underqBX   twoqCX   toqDX   throughqEX   thoseqFX   thisqGX   theyqHX   thereqIX   thenqJX   themqKX   theqLX   thatqMX   thanqNX   systemqOX   suchqPX   soqQX   shouldqRX   sheqSX   sameqTX   rightqUX   reqVX   ourqWX   outqXX   orqYX   onqZX   ofq[X   notq\X   norq]X   noq^X   myq_X   mustq`X   moreqaX   meqbX   mayqcX   manyqdX   makeqeX   ltqfX   justqgX   itqhX   isqiX   intoqjX   inqkX   ifqlX   iqdqmX   haveqnX   hasqoX   hadqpX   gtqqX   forqrX   fewqsX   doqtX   doesquX   didqvX   couldqwX   byqxX   butqyX   beqzX   atq{X   asq|X   areq}X   anyq~X   anqX   amq�X   alsoq�X   allq�X   againstq�X   afterq�X   aq�X   aboutq�X   aboveq�e�q�Rq�X   _vocabularyq�}q�(X   workq�KX   fromq�KX   homeq�KX   opportunityq�KX   earnq�KX   10000q�K X   weekq�KX
+   guaranteedq�KX   noq�KX
+   experienceq�KX   neededq�KX	   immediateq�KX   startq�KX   highq�KX   salaryq�KX   sendq�KX   personalq�KX   bankq�KX   detailsq�KX   directq�KX   depositq�KX   setupq�KX
+   investmentq�KX   requiredq�KX   trainingq�KX	   materialsq�KX   urgentq�KX   positionq�KX   ssnq�KX   idq�KX   softwareq�KX   engineerq�KX   establishedq�KX   companyq�KX	   marketingq�KX   managerq�KX   roleq�KX   competitiveq�KX   administrativeq�KX	   assistantq�KX   localq�KX   officeq�KX   salesq�KX   representativeq�KX   baseq�KX   plusq�KX
+   commissionq�KX   projectq�KX   yearsq�KuX   _tfidf_indicesq�h%h&K �q�h(�q�Rq�(KK�q�h,X   i4q�K K�q�Rq�(Kh0NNNJ����J����K tq�b�C(                                        q�tq�bub. 

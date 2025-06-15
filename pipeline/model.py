@@ -165,24 +165,52 @@ class JobScamDetector:
         """
         logger.info("Starting model training...")
         
+        # Validate input data
+        if not isinstance(X, pd.DataFrame) or not isinstance(y, pd.Series):
+            raise TypeError("X must be a DataFrame and y must be a Series")
+            
+        if len(X) != len(y):
+            raise ValueError("X and y must have the same length")
+            
+        if len(X) == 0:
+            raise ValueError("Empty training data provided")
+            
+        # Check for missing values
+        if X.isnull().any().any():
+            logger.warning("Missing values detected in features. Consider handling them before training.")
+        
         # Prepare data
         X_train, X_test, y_train, y_test = self.prepare_data(X, y)
+        
+        # Perform hyperparameter tuning if requested
+        if tune_params:
+            logger.info("Performing hyperparameter tuning...")
+            best_params = self.tune_hyperparameters(X_train, y_train)
+            self.model_params.update(best_params)
+            logger.info(f"Updated model parameters: {self.model_params}")
         
         # Create pipeline with SMOTE for handling imbalance
         self.model = Pipeline([
             ('scaler', self.scaler),
             ('smote', self.smote),
             ('classifier', GradientBoostingClassifier(
-                n_estimators=100,
-                learning_rate=0.1,
-                max_depth=3,
+                n_estimators=self.model_params.get('n_estimators', 100),
+                learning_rate=self.model_params.get('learning_rate', 0.1),
+                max_depth=self.model_params.get('max_depth', 3),
+                min_samples_split=self.model_params.get('min_samples_split', 2),
+                min_samples_leaf=self.model_params.get('min_samples_leaf', 1),
+                subsample=self.model_params.get('subsample', 0.8),
                 random_state=42
             ))
         ])
         
-        # Train model
+        # Train model with early stopping
         logger.info("Training model...")
-        self.model.fit(X_train, y_train)
+        try:
+            self.model.fit(X_train, y_train)
+        except Exception as e:
+            logger.error(f"Error during model training: {e}")
+            raise
         
         # Get feature importance
         self.feature_importance = pd.DataFrame({
@@ -190,14 +218,26 @@ class JobScamDetector:
             'importance': self.model.named_steps['classifier'].feature_importances_
         }).sort_values('importance', ascending=False)
         
+        # Log top important features
+        logger.info("Top 10 important features:")
+        logger.info(self.feature_importance.head(10))
+        
         # Evaluate model
-        metrics = self._evaluate_model(X_test, y_test)
+        train_metrics = self._evaluate_model(X_train, y_train)
+        test_metrics = self._evaluate_model(X_test, y_test)
+        
+        # Check for overfitting
+        train_f1 = train_metrics['f1_score']
+        test_f1 = test_metrics['f1_score']
+        if train_f1 - test_f1 > 0.2:  # Threshold for overfitting warning
+            logger.warning(f"Possible overfitting detected: train_f1={train_f1:.3f}, test_f1={test_f1:.3f}")
         
         # Save model and metrics
         self.save_model()
-        self.save_metrics(metrics)
+        self.save_metrics(test_metrics)
         
-        return metrics
+        # Return test metrics
+        return test_metrics
     
     def _evaluate_model(self, X_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, float]:
         """
