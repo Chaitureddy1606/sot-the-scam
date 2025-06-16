@@ -56,8 +56,7 @@ The system uses machine learning models trained on a dataset of known legitimate
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/spot-the-scam.git
-cd spot-the-scam
+git clone https://github.com/Chaitureddy1606/spot-the-scam.git
 ```
 
 2. Create and activate a virtual environment:
